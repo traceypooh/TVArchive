@@ -12,8 +12,7 @@ let baseURL
  * convenience function inserts alert template, to present messages/errors to the user.
  */
 const createAlert = function (title, description) {
-  const alertString = `
-<?xml version="1.0" encoding="UTF-8"?>
+  const alertString = `<?xml version="1.0" encoding="UTF-8"?>
 <document>
   <alertTemplate>
     <title>${title}</title>
@@ -32,8 +31,8 @@ function parseJSON(information) {
 
   let vids = ''
   // eslint-disable-next-line  guard-for-in
-  for (let network in result) {
-    createAlert('parsing', network)
+  for (const network in result) {
+    createAlert(network, '')
     const shows = result[network]
 
     // <title>${network}</title>
@@ -42,13 +41,11 @@ function parseJSON(information) {
   <section>
 `
     // eslint-disable-next-line  guard-for-in
-    for (let show in shows) {
+    for (const show of shows) {
       vids += `
-<lockup>
-  <a href="https://archive.org/details/${show.identifier}">
+<lockup onselect="playMedia('https://archive.org/download/${show.identifier}/format=h.264&amp;start=0&amp;end=180', 'video')">
     <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
     <title>${show.title}</title>
-  </a>
 </lockup>`
     }
 
@@ -84,10 +81,21 @@ function getDocument(url) {
 }
 
 
+function playMedia(videourl, mediaType, overlayDoc) {
+  const singleVideo = new MediaItem(mediaType, videourl)
+  const videoList = new Playlist()
+  videoList.push(singleVideo)
+  const myPlayer = new Player()
+  myPlayer.playlist = videoList
+  myPlayer.overlayDocument = overlayDoc
+  myPlayer.play()
+}
+
+
 App.onLaunch = function (options) {
   createAlert('hmm', 'hai')
   baseURL = options.BASEURL
   const jsonURL = `${baseURL}lastweek.json`
   createAlert('loading', 'news from last week')
-  // getDocument(jsonURL)
+  getDocument(jsonURL)
 }
