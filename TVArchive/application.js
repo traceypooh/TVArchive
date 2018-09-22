@@ -4,14 +4,14 @@
   cd ~/dev/TVArchive  &&  /petabox/www/node_modules/.bin/eslint .
 */
 
-/* global App navigationDocument */
+/* global App navigationDocument MediaItem Playlist Player */
 
 let baseURL
 
 /**
  * convenience function inserts alert template, to present messages/errors to the user.
  */
-const createAlert = function (title, description) {
+const createAlert = (title, description) => {
   const alertString = `<?xml version="1.0" encoding="UTF-8"?>
 <document>
   <alertTemplate>
@@ -75,12 +75,13 @@ function parseJSON(information) {
 function getDocument(url) {
   const templateXHR = new XMLHttpRequest()
   templateXHR.responseType = 'document'
-  templateXHR.addEventListener('load', function() { parseJSON(templateXHR.responseText) }, false)
+  templateXHR.addEventListener('load', () => parseJSON(templateXHR.responseText), false)
   templateXHR.open('GET', url, true)
   templateXHR.send()
 }
 
 
+// eslint-disable-next-line  no-unused-vars
 function playMedia(videourl, mediaType, overlayDoc) {
   const singleVideo = new MediaItem(mediaType, videourl)
   const videoList = new Playlist()
@@ -92,10 +93,9 @@ function playMedia(videourl, mediaType, overlayDoc) {
 }
 
 
-App.onLaunch = function (options) {
-  createAlert('hmm', 'hai')
+App.onLaunch = (options) => {
   baseURL = options.BASEURL
   const jsonURL = `${baseURL}lastweek.json`
-  createAlert('loading', 'news from last week')
+  createAlert('loading', 'news shows from last week primetime')
   getDocument(jsonURL)
 }
