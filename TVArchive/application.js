@@ -5,6 +5,8 @@
 //   selecting will play 2 mins _UNLESS_ you have privs -- in which case
 //   it starts there but goes to end
 
+// https://developer.apple.com/library/archive/documentation/TVMLKitJS/Conceptual/TVMLProgrammingGuide/PlayingVideo.html#//apple_ref/doc/uid/TP40016718-CH13-SW1
+
 /**
   lint like:
   cd ~/dev/TVArchive  &&  /petabox/www/node_modules/.bin/eslint .
@@ -138,7 +140,7 @@ function parseJSON(response) {
     // eslint-disable-next-line  guard-for-in
     for (const show of shows) {
       vids += `
-<lockup onselect="playMedia('https://www-tracey.archive.org/download/${show.identifier}/format=h.264&amp;start=0&amp;end=180', 'video')">
+<lockup onselect="playMedia('https://archive.org/download/${show.identifier}/format=h.264&amp;start=0&amp;end=180', 'video')">
     <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
     <title>${show.title}</title>
 </lockup>`
