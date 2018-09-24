@@ -52,11 +52,100 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
                 appControllerContext.launchOptions[kind.rawValue] = value
             }
         }
-        
+      
         appController = TVApplicationController(context: appControllerContext, window: window, delegate: self)
-        
+      
+        auth()
+      
         return true
     }
+  
+  func auth() {
+ 
+    let url = URL(string: "https://www-tracey.archive.org/~tracey/test.php")
+    let task = URLSession.shared.dataTask(with: url!) { data, response, error in
+      if let error = error {
+        print(error)
+        return
+      }
+      guard let httpResponse = response as? HTTPURLResponse,
+        (200...299).contains(httpResponse.statusCode) else {
+          print(response)
+          print(data)
+          return
+      }
+      if let mimeType = httpResponse.mimeType, mimeType == "text/html",
+        let data = data,
+        let string = String(data: data, encoding: .utf8) {
+        DispatchQueue.main.async {
+          print("hai hai")
+          print(response)
+          //print(self.webView.loadHTMLString(string, baseURL: url))
+          
+          let val="xxx"
+
+          self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
+          self.setIAcookie("logged-in-user", "tracey%40archive.org", ".archive.org")
+          self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
+          self.setIAcookie("logged-in-sig", val, "archive.org")
+          self.setIAcookie("logged-in-sig", val, ".archive.org")
+          self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
+        }
+      }
+    }
+    task.resume()
+    print(task.currentRequest?.allHTTPHeaderFields)
+    
+    
+    
+    let task2 = URLSession.shared.dataTask(with: url!) { data, response, error in
+      if let error = error {
+        print(error)
+        return
+      }
+      guard let httpResponse = response as? HTTPURLResponse,
+        (200...299).contains(httpResponse.statusCode) else {
+          print(response)
+          print(data)
+          return
+      }
+      if let mimeType = httpResponse.mimeType, mimeType == "text/html",
+        let data = data,
+        let string = String(data: data, encoding: .utf8) {
+        DispatchQueue.main.async {
+          print("hai hai")
+          print(response)
+          //print(self.webView.loadHTMLString(string, baseURL: url))
+          
+        }
+      }
+    }
+    task2.resume()
+  }
+  
+  
+  func setIAcookie(_ name: String, _ val: String, _ domain: String) {
+    let ExpTime = TimeInterval(60 * 60 * 24 * 365)
+
+    let cookieProps: [HTTPCookiePropertyKey : Any] = [
+      HTTPCookiePropertyKey.domain: domain,
+      HTTPCookiePropertyKey.path: "/",
+      HTTPCookiePropertyKey.name: name,
+      HTTPCookiePropertyKey.value: val,
+      HTTPCookiePropertyKey.secure: "TRUE",
+      HTTPCookiePropertyKey.expires: NSDate(timeIntervalSinceNow: ExpTime)
+    ]
+    
+    if let cookie = HTTPCookie(properties: cookieProps) {
+      print("cooked!")
+      print(domain)
+      print(name)
+      print(val)
+      HTTPCookieStorage.shared.setCookie(cookie)
+    }
+  }
+  
+  
     
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
