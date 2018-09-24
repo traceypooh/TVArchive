@@ -6,6 +6,8 @@
 //   it starts there but goes to end
 
 // https://developer.apple.com/library/archive/documentation/TVMLKitJS/Conceptual/TVMLProgrammingGuide/PlayingVideo.html#//apple_ref/doc/uid/TP40016718-CH13-SW1
+// https://medium.com/airbnb-engineering/apple-tv-authentication-a156937ea211
+// https://stephenradford.me/oauth-login-on-tvos/
 
 /**
   lint like:
@@ -119,8 +121,12 @@ function parseJSON(response) {
   }
   // createAlert('map', JSON.stringify(map))
 
-
   let vids = ''
+  const startend = '&amp;start=0&amp;end=180' // xxx
+  const args = '&amp;tunnel=1'
+  // https://www-tracey.archive.org/services/find_file.php?file=CNNW_20180920_010000_Cuomo_Primetime&loconly=1&output=json&max=1
+
+
   // eslint-disable-next-line  guard-for-in
   for (const ch in SHOWS) {
     const network = ch.replace(/W$/, '').replace(/KQED/, 'PBS').replace(/NEWS/, ' News')
@@ -139,10 +145,11 @@ function parseJSON(response) {
 `
     // eslint-disable-next-line  guard-for-in
     for (const show of shows) {
+      const vid = `https://www-tracey.archive.org/download/${show.identifier}/format=h.264${args}`
       vids += `
-<lockup onselect="playMedia('https://archive.org/download/${show.identifier}/format=h.264&amp;start=0&amp;end=180', 'video')">
-    <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
-    <title>${show.title}</title>
+<lockup onselect="playVideo('${vid}', '${show.identifier}')">
+  <img src="https://www-tracey.archive.org/services/img/${show.identifier}" width="360" height="248"/>
+  <title>${show.title}</title>
 </lockup>`
     }
 
@@ -169,10 +176,10 @@ function parseJSON(response) {
 }
 
 
-function getDocument(url) {
+function getDocument(url, callback) {
   const templateXHR = new XMLHttpRequest()
   templateXHR.responseType = 'document'
-  templateXHR.addEventListener('load', () => parseJSON(templateXHR.responseText), false)
+  templateXHR.addEventListener('load', () => callback(templateXHR.responseText), false)
   // createAlert('FETCHING', url.replace(/&/g, '&amp;'))
   templateXHR.open('GET', url, true)
   templateXHR.send()
@@ -190,17 +197,18 @@ function lastweek() {
   const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
   const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
     `q=${query}`,
-    'fl[]=identifier,title',
+    'fl[]=identifier,title,reported_server', // xxx reported_dir
     'sort[]=identifier+desc',
     'rows=9999',
     'contentLength=1',
     'output=json'].join('&')}`
-  getDocument(url)
+  getDocument(url, parseJSON)
 }
 
 // eslint-disable-next-line  no-unused-vars
-function playMedia(videourl, mediaType, overlayDoc) {
-  const singleVideo = new MediaItem(mediaType, videourl)
+function playVideo(videourl, identifier, overlayDoc) {
+  const singleVideo = new MediaItem('video', videourl)
+  singleVideo.title = identifier
   const videoList = new Playlist()
   videoList.push(singleVideo)
   const myPlayer = new Player()
