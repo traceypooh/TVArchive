@@ -53,80 +53,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
             }
         }
       
+        auth()
+
         appController = TVApplicationController(context: appControllerContext, window: window, delegate: self)
       
-        auth()
       
         return true
     }
   
   func auth() {
- 
-    let url = URL(string: "https://www-tracey.archive.org/~tracey/test.php")
-    let task = URLSession.shared.dataTask(with: url!) { data, response, error in
-      if let error = error {
-        print(error)
-        return
-      }
-      guard let httpResponse = response as? HTTPURLResponse,
-        (200...299).contains(httpResponse.statusCode) else {
-          print(response)
-          print(data)
-          return
-      }
-      if let mimeType = httpResponse.mimeType, mimeType == "text/html",
-        let data = data,
-        let string = String(data: data, encoding: .utf8) {
-        DispatchQueue.main.async {
-          print("hai hai")
-          print(response)
-          //print(self.webView.loadHTMLString(string, baseURL: url))
-          
-          let val="xxx"
+    let val="xxx"
 
-          self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
-          self.setIAcookie("logged-in-user", "tracey%40archive.org", ".archive.org")
-          self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
-          self.setIAcookie("logged-in-sig", val, "archive.org")
-          self.setIAcookie("logged-in-sig", val, ".archive.org")
-          self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
-        }
-      }
+    if (false) {
+      let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+      HTTPCookieStorage.shared.removeCookies(since: yesterday!)
+      return
     }
-    task.resume()
-    print(task.currentRequest?.allHTTPHeaderFields)
     
-    
-    
-    let task2 = URLSession.shared.dataTask(with: url!) { data, response, error in
-      if let error = error {
-        print(error)
-        return
-      }
-      guard let httpResponse = response as? HTTPURLResponse,
-        (200...299).contains(httpResponse.statusCode) else {
-          print(response)
-          print(data)
-          return
-      }
-      if let mimeType = httpResponse.mimeType, mimeType == "text/html",
-        let data = data,
-        let string = String(data: data, encoding: .utf8) {
-        DispatchQueue.main.async {
-          print("hai hai")
-          print(response)
-          //print(self.webView.loadHTMLString(string, baseURL: url))
-          
-        }
-      }
-    }
-    task2.resume()
+    self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
+    self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
+
+    self.setIAcookie("logged-in-sig", val, "archive.org")
+    self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
   }
   
   
   func setIAcookie(_ name: String, _ val: String, _ domain: String) {
     let ExpTime = TimeInterval(60 * 60 * 24 * 365)
-
+    
     let cookieProps: [HTTPCookiePropertyKey : Any] = [
       HTTPCookiePropertyKey.domain: domain,
       HTTPCookiePropertyKey.path: "/",
@@ -137,10 +91,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     ]
     
     if let cookie = HTTPCookie(properties: cookieProps) {
-      print("cooked!")
-      print(domain)
-      print(name)
-      print(val)
       HTTPCookieStorage.shared.setCookie(cookie)
     }
   }
