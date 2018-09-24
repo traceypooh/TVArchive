@@ -88,10 +88,8 @@ function identifierDay(id) {
 
 function parseJSON(response) {
   // createAlert('PARSE', response)
-  JSON.parse(response)
   const { docs } = JSON.parse(response).response
 
-  // const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] //xxx
   const map = {}
   for (const show of docs) {
     // eslint-disable-next-line  guard-for-in
