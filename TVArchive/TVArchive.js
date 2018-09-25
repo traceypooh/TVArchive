@@ -1,35 +1,4 @@
 
-const SHOWS = {
-  MSNBCW: {
-    '4:00pm': ['Hardball With Chris Matthews'],
-    '5:00pm': ['All In With Chris Hayes'],
-    '6:00pm': ['The Rachel Maddow Show'],
-    '7:00pm': ["The Last Word With Lawrence O'Donnell"],
-    '8:00pm': ['The 11th Hour With Brian Williams'],
-  },
-  CNNW: {
-    '5:00pm': ['Anderson Cooper 360'],
-    '6:00pm': ['Cuomo Primetime'],
-    '7:00pm': ['Cuomo Primetime', 'CNN Tonight With Don Lemon'],
-    '8:00pm': ['CNN Tonight With Don Lemon', 'Anderson Cooper 360'],
-    '9:00pm': ['Anderson Cooper 360'],
-  },
-  FOXNEWSW: {
-    '6:00pm': ['Hannity'],
-    '7:00pm': ['The Ingraham Angle'],
-    '8:00pm': ['Fox News @ Night With Shannon Bream'],
-    '9:00pm': ['Tucker Carlson Tonight'],
-  },
-  KQED: {
-    '6:00pm': ['PBS NewsHour'],
-  },
-  BBCNEWS: {
-    '5:00pm': ['BBC News at Five'],
-    '6:00pm': ['BBC News at Six'],
-  },
-}
-
-
 class TVA {
   // tvOS app 'TVArchive' - leverages TVML/TVJS
   // xxx last night's shows - based on history and favoriting
@@ -45,6 +14,39 @@ class TVA {
 
   /* global App navigationDocument MediaItem Playlist Player */
 
+  static SHOWS() {
+    return {
+      MSNBCW: {
+        '4:00pm': ['Hardball With Chris Matthews'],
+        '5:00pm': ['All In With Chris Hayes'],
+        '6:00pm': ['The Rachel Maddow Show'],
+        '7:00pm': ["The Last Word With Lawrence O'Donnell"],
+        '8:00pm': ['The 11th Hour With Brian Williams'],
+      },
+      CNNW: {
+        '5:00pm': ['Anderson Cooper 360'],
+        '6:00pm': ['Cuomo Primetime'],
+        '7:00pm': ['Cuomo Primetime', 'CNN Tonight With Don Lemon'],
+        '8:00pm': ['CNN Tonight With Don Lemon', 'Anderson Cooper 360'],
+        '9:00pm': ['Anderson Cooper 360'],
+      },
+      FOXNEWSW: {
+        '6:00pm': ['Hannity'],
+        '7:00pm': ['The Ingraham Angle'],
+        '8:00pm': ['Fox News @ Night With Shannon Bream'],
+        '9:00pm': ['Tucker Carlson Tonight'],
+      },
+      KQED: {
+        '6:00pm': ['PBS NewsHour'],
+      },
+      BBCNEWS: {
+        '5:00pm': ['BBC News at Five'],
+        '6:00pm': ['BBC News at Six'],
+      },
+    }
+  }
+
+
 
   /**
    * Takes search results and creates video carousels
@@ -55,6 +57,7 @@ class TVA {
     // TVA.alert('PARSE', response)
     const { docs } = JSON.parse(response).response
 
+    const SHOWS = TVA.SHOWS()
     const map = {}
     for (const show of docs) {
       // eslint-disable-next-line  guard-for-in
@@ -91,7 +94,7 @@ class TVA {
 
 
     // eslint-disable-next-line  guard-for-in
-    for (const ch in SHOWS) {
+    for (const ch in TVA.SHOWS()) {
       const network = ch.replace(/W$/, '').replace(/KQED/, 'PBS').replace(/NEWS/, ' News')
       TVA.alert(network, '')
 
@@ -151,7 +154,7 @@ class TVA {
     const l = new Date(left * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
     const r = new Date(rite * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
 
-    const chans = `contributor:${Object.keys(SHOWS).join(' OR contributor:')}`
+    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
     const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
     const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
       `q=${query}`,
