@@ -47,6 +47,30 @@ class TVA {
   }
 
 
+  /**
+   * Creates TV News shows carousels
+   */
+  constructor() {
+    TVA.alert('Loading', 'News from last week primetime')
+
+    const rite = new Date().getTime() / 1000
+    const left = rite - (7 * 86400)
+
+    const l = new Date(left * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
+    const r = new Date(rite * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
+
+    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
+    const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
+    const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
+      `q=${query}`,
+      'fl[]=identifier,title,reported_server', // xxx reported_dir
+      'sort[]=identifier+desc',
+      'rows=9999',
+      'contentLength=1',
+      'output=json'].join('&')}`
+    this.fetchJSON(url, TVA.search_results_to_carousels)
+  }
+
 
   /**
    * Takes search results and creates video carousels
@@ -143,31 +167,6 @@ class TVA {
 
 
   /**
-   * Creates TV News shows carousels
-   */
-  constructor() {
-    TVA.alert('Loading', 'News from last week primetime')
-
-    const rite = new Date().getTime() / 1000
-    const left = rite - (7 * 86400)
-
-    const l = new Date(left * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
-    const r = new Date(rite * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
-
-    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
-    const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
-    const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
-      `q=${query}`,
-      'fl[]=identifier,title,reported_server', // xxx reported_dir
-      'sort[]=identifier+desc',
-      'rows=9999',
-      'contentLength=1',
-      'output=json'].join('&')}`
-    this.fetchJSON(url, TVA.search_results_to_carousels)
-  }
-
-
-  /**
    * Plays a video
    * @param videourl string - url for video
    * @param identifier string - item identifier
@@ -243,7 +242,4 @@ class TVA {
 
 
 // entry point from swift app
-App.onLaunch = () => {
-  const tva = new TVA()
-}
-
+App.onLaunch = () => new TVA()
