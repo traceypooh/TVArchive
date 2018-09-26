@@ -13,6 +13,8 @@ class TVA {
 
 
   /* global App navigationDocument MediaItem Playlist Player */
+  /* eslint no-continue: 0 */
+
 
   static SHOWS() {
     return {
@@ -68,7 +70,7 @@ class TVA {
       'rows=9999',
       'contentLength=1',
       'output=json'].join('&')}`
-    this.fetchJSON(url, TVA.search_results_to_carousels)
+    TVA.fetchJSON(url, TVA.search_results_to_carousels)
   }
 
 
@@ -112,7 +114,7 @@ class TVA {
     // TVA.alert('map', JSON.stringify(map))
 
     let vids = ''
-    const startend = '&amp;start=0&amp;end=180' // xxx
+    // const startend = '&amp;start=0&amp;end=180' // xxx
     const args = '&amp;tunnel=1'
     // https://www-tracey.archive.org/services/find_file.php?file=CNNW_20180920_010000_Cuomo_Primetime&loconly=1&output=json&max=1
 
@@ -178,7 +180,6 @@ class TVA {
     videoList.push(singleVideo)
     const myPlayer = new Player()
     myPlayer.playlist = videoList
-    // myPlayer.overlayDocument = overlayDoc // xxx
     myPlayer.play()
   }
 
@@ -212,7 +213,7 @@ class TVA {
    * @param url string - REST API url that returns JSON
    * @param callback function - function to call with results (or error)
    */
-  fetchJSON(url, callback) {
+  static fetchJSON(url, callback) {
     const templateXHR = new XMLHttpRequest()
     templateXHR.responseType = 'document'
     templateXHR.addEventListener('load', () => callback(templateXHR.responseText), false)
