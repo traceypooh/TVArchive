@@ -16,8 +16,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     var appController: TVApplicationController?
     
     // tvBaseURL points to a server on your local machine. To create a local server for testing purposes, use the following command inside your project folder from the Terminal app: ruby -run -ehttpd . -p9001. See NSAppTransportSecurity for information on using a non-secure server.
-    static let tvBaseURL = "https://www-tracey.archive.org/details/tv?seek&route="
-    static let tvBootURL = "\(AppDelegate.tvBaseURL)/application.js"
+    static let tvBaseURL = "https://www-tracey.archive.org/includes"
+    static let tvBootURL = "\(AppDelegate.tvBaseURL)/TVArchive.js"
     
     // MARK: Javascript Execution Helper
     
@@ -61,41 +61,40 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
         return true
     }
   
-  func auth() {
-    let val="xxx"
-
-    if (false) {
-      let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-      HTTPCookieStorage.shared.removeCookies(since: yesterday!)
-      return
+    func auth() {
+        let val="xxx"
+        
+        if (false) {
+            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+            HTTPCookieStorage.shared.removeCookies(since: yesterday!)
+            return
+        }
+        
+        self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
+        self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
+        
+        self.setIAcookie("logged-in-sig", val, "archive.org")
+        self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
     }
     
-    self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
-    self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
-
-    self.setIAcookie("logged-in-sig", val, "archive.org")
-    self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
-  }
-  
-  
-  func setIAcookie(_ name: String, _ val: String, _ domain: String) {
-    let ExpTime = TimeInterval(60 * 60 * 24 * 365)
     
-    let cookieProps: [HTTPCookiePropertyKey : Any] = [
-      HTTPCookiePropertyKey.domain: domain,
-      HTTPCookiePropertyKey.path: "/",
-      HTTPCookiePropertyKey.name: name,
-      HTTPCookiePropertyKey.value: val,
-      HTTPCookiePropertyKey.secure: "TRUE",
-      HTTPCookiePropertyKey.expires: NSDate(timeIntervalSinceNow: ExpTime)
-    ]
-    
-    if let cookie = HTTPCookie(properties: cookieProps) {
-      HTTPCookieStorage.shared.setCookie(cookie)
+    func setIAcookie(_ name: String, _ val: String, _ domain: String) {
+        let ExpTime = TimeInterval(60 * 60 * 24 * 365)
+        
+        let cookieProps: [HTTPCookiePropertyKey : Any] = [
+            HTTPCookiePropertyKey.domain: domain,
+            HTTPCookiePropertyKey.path: "/",
+            HTTPCookiePropertyKey.name: name,
+            HTTPCookiePropertyKey.value: val,
+            HTTPCookiePropertyKey.secure: "TRUE",
+            HTTPCookiePropertyKey.expires: NSDate(timeIntervalSinceNow: ExpTime)
+        ]
+        
+        if let cookie = HTTPCookie(properties: cookieProps) {
+            HTTPCookieStorage.shared.setCookie(cookie)
+        }
     }
-  }
-  
-  
+    
     
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
