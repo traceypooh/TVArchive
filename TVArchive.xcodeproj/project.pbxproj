@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		400A2523215EA7B5008EDEDC /* TVArchive.js in Resources */ = {isa = PBXBuildFile; fileRef = 400A2522215EA7B5008EDEDC /* TVArchive.js */; };
 		40C9B6502156C8BF00BD1585 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C9B64F2156C8BF00BD1585 /* AppDelegate.swift */; };
 		40C9B6532156C8BF00BD1585 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 40C9B6522156C8BF00BD1585 /* Assets.xcassets */; };
 		40C9B65E2156C8BF00BD1585 /* TVArchiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C9B65D2156C8BF00BD1585 /* TVArchiveTests.swift */; };
@@ -31,9 +32,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		400A2522215EA7B5008EDEDC /* TVArchive.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = TVArchive.js; sourceTree = "<group>"; };
 		40C9B64C2156C8BF00BD1585 /* TVArchive.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TVArchive.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		40C9B64F2156C8BF00BD1585 /* AppDelegate.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; tabWidth = 4; wrapsLines = 1; };
-		40C9B6512156C8BF00BD1585 /* application.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = application.js; sourceTree = "<group>"; };
 		40C9B6522156C8BF00BD1585 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		40C9B6542156C8BF00BD1585 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		40C9B6592156C8BF00BD1585 /* TVArchiveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TVArchiveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,9 +94,9 @@
 			isa = PBXGroup;
 			children = (
 				40C9B64F2156C8BF00BD1585 /* AppDelegate.swift */,
-				40C9B6512156C8BF00BD1585 /* application.js */,
 				40C9B6522156C8BF00BD1585 /* Assets.xcassets */,
 				40C9B6542156C8BF00BD1585 /* Info.plist */,
+				400A2522215EA7B5008EDEDC /* TVArchive.js */,
 			);
 			path = TVArchive;
 			sourceTree = "<group>";
@@ -225,6 +226,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40C9B6532156C8BF00BD1585 /* Assets.xcassets in Resources */,
+				400A2523215EA7B5008EDEDC /* TVArchive.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
