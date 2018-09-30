@@ -116,8 +116,6 @@ class TVA {
     let vids = ''
     // const startend = '&amp;start=0&amp;end=180' // xxx
     const args = '&amp;tunnel=1'
-    // https://www-tracey.archive.org/services/find_file.php?file=CNNW_20180920_010000_Cuomo_Primetime&loconly=1&output=json&max=1
-
 
     // eslint-disable-next-line  guard-for-in
     for (const ch in TVA.SHOWS()) {
@@ -137,10 +135,10 @@ class TVA {
   `
       // eslint-disable-next-line  guard-for-in
       for (const show of shows) {
-        const vid = `https://www-tracey.archive.org/download/${show.identifier}/format=h.264${args}`
+        const vid = `https://www-tracey.archive.org/download/${show.identifier}/format=h.264${args}` // xxx www-tracey
         vids += `
   <lockup onselect="TVA.playVideo('${vid}', '${show.identifier}')">
-    <img src="https://www-tracey.archive.org/services/img/${show.identifier}" width="360" height="248"/>
+    <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
     <title>${show.title}</title>
   </lockup>`
       }
