@@ -65,7 +65,7 @@ class TVA {
     const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
     const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
       `q=${query}`,
-      'fl[]=identifier,title,reported_server', // xxx reported_dir
+      'fl[]=identifier,title', //,reported_server,reported_dir
       'sort[]=identifier+desc',
       'rows=9999',
       'contentLength=1',
@@ -135,7 +135,7 @@ class TVA {
   `
       // eslint-disable-next-line  guard-for-in
       for (const show of shows) {
-        const vid = `https://www-tracey.archive.org/download/${show.identifier}/format=h.264${args}` // xxx www-tracey
+        const vid = `https://archive.org/download/${show.identifier}/format=h.264${args}`
         vids += `
   <lockup onselect="TVA.playVideo('${vid}', '${show.identifier}')">
     <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
