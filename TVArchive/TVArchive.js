@@ -187,7 +187,7 @@ class TVA {
    * @param {string} args
    */
   static videoTile(map, args) {
-    const vid = `https://www-tracey.archive.org/download/${map.identifier}/format=h.264${args}`
+    const vid = `https://archive.org/download/${map.identifier}/format=h.264${args}`
     return `
   <lockup onselect="TVA.playVideo('${vid}', '${map.identifier}')">
     <img src="https://archive.org/services/img/${map.identifier}" width="360" height="248"/>
@@ -195,15 +195,29 @@ class TVA {
   </lockup>`
   }
 
+  /**
+   *
+   * @param {string} vid url
+   * @param {string} thumb url
+   * @param {string} title
+   */
+  static videoTile2(thumb, vid, title) {
+    return `
+  <lockup onselect="TVA.playVideo('${vid}', '${title}')">
+    <img src="${thumb}" width="360" height="248"/>
+    <title>${title}</title>
+  </lockup>`
+  }
+
 
   /**
    * Plays a video
    * @param {string} videourl - url for video
-   * @param {string} identifier - item identifier
+   * @param {string} title
    * eslint-disable-next-line  no-unused-vars */
-  static playVideo(videourl, identifier) {
+  static playVideo(videourl, title) {
     const singleVideo = new MediaItem('video', videourl)
-    singleVideo.title = identifier
+    singleVideo.title = title
     const videoList = new Playlist()
     videoList.push(singleVideo)
     const myPlayer = new Player()
@@ -294,7 +308,7 @@ class TVA {
 
     const dataString = `username=${user}&password=${pass}&remember=CHECKED&action=login&submit=Log+in`
 
-    TVA.fetchPOST('https://www-tracey.archive.org/account/login.php', dataString, (xhr) => {
+    TVA.fetchPOST('https://archive.org/account/login.php', dataString, (xhr) => {
       // https://developer.apple.com/documentation/tvmljs/xmlhttprequest
       // TVA.alert(dataString.replace(/&/g, '&amp;'))
       TVA.alert(xhr.status)
@@ -335,7 +349,65 @@ class TVA {
 
 
   static search() {
-    TVA.alert('xxx')
+    TVA.render(`
+<document>
+  <formTemplate>
+    <banner>
+      <img src="https://archive.org/images/glogo.png" width="79" height="79"/>
+      <description>
+        Search TV News captions from last week
+      </description>
+    </banner>
+    <textField>
+      search captions
+    </textField>
+    <footer>
+      <button onselect="TVA.search_results()">
+        <text>Search</text>
+      </button>
+    </footer>
+  </formTemplate>
+</document>`)
+  }
+
+
+  static search_results() {
+    const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
+    const e = doc.getElementsByTagName('textField').item(0)
+    const query = e.getFeature('Keyboard').text
+
+    // search last week xxx limit to main channels and primetime, too (identifiers OR??)
+    const rite = new Date().getTime()
+    const left = rite - (7 * 86400 * 1000)
+    const l = new Date(left).toISOString().substr(0, 10)
+    const r = new Date(rite).toISOString().substr(0, 10)
+    console.log(l, ' to ', r)
+
+    TVA.fetchJSON(`https://archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`, (response) => {
+      let vids = ''
+      for (const hit of JSON.parse(response)) {
+        console.log(hit)
+        vids += TVA.videoTile2(`https:${hit.thumb}`, hit.video.replace(/&ignore=x.mp4/, ''), hit.title.replace(/&/g, '&amp;')) // xxx .snip => description
+      }
+      console.log(vids)
+      // debugger
+
+      TVA.render(`
+<document>
+  <stackTemplate>
+    <banner>
+      <title>Search results for: ${query.replace(/&/g, '&amp;')}</title>
+    </banner>
+    <collectionList>
+      <shelf>
+        <section>
+          ${vids}
+        </section>
+      </shelf>
+    </collectionList>
+  </stackTemplate>
+</document>`)
+    })
   }
 
 
