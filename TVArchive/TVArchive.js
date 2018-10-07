@@ -1,8 +1,11 @@
 
 class TVA {
   // tvOS app 'TVArchive' - leverages TVML/TVJS
+  // xxx loading interstitials
+  // xxx clear prior alerts
   // xxx last night's shows - based on history and favoriting
   // xxx cache
+  // xxx oneupTemplate for playing 3m clip w/ CC
   // click a show goes to carousel w/ each minute's thumb + CC
   //   selecting will play 2 mins _UNLESS_ you have privs -- in which case
   //   it starts there but goes to end
@@ -12,7 +15,7 @@ class TVA {
   // https://stephenradford.me/oauth-login-on-tvos/
   // https://github.com/emadalam/atvjs
 
-  /* global App navigationDocument MediaItem Playlist Player */
+  /* global App navigationDocument getActiveDocument MediaItem Playlist Player */
   /* eslint no-continue: 0 */
 
 
@@ -53,7 +56,7 @@ class TVA {
    * Creates TV News shows carousels
    */
   constructor() {
-    TVA.alert('Loading', 'News from last week primetime')
+    TVA.alert('Loading', 'News from last week primetime', true)
 
     const rite = new Date().getTime() / 1000
     const left = rite - (7 * 86400)
@@ -120,7 +123,7 @@ class TVA {
     // eslint-disable-next-line  guard-for-in
     for (const ch in TVA.SHOWS()) {
       const network = ch.replace(/W$/, '').replace(/KQED/, 'PBS').replace(/NEWS/, ' News')
-      TVA.alert(network, '')
+      TVA.alert(network, '', true)
 
       if (typeof map[ch] === 'undefined')
         continue
@@ -144,6 +147,9 @@ class TVA {
   </shelf>
   `
     }
+
+    if (TVA.priorDoc)
+      navigationDocument.popToDocument(TVA.priorDoc)
 
     TVA.render(`
   <document>
@@ -336,11 +342,11 @@ class TVA {
       <title>Your Favorite Videos</title>
     </banner>
     <collectionList>
-      <shelf>
+      <grid>
         <section>
           ${vids}
         </section>
-      </shelf>
+      </grid>
     </collectionList>
   </stackTemplate>
 </document>`)
@@ -374,16 +380,30 @@ class TVA {
   static search_results() {
     const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
     const e = doc.getElementsByTagName('textField').item(0)
-    const query = e.getFeature('Keyboard').text
+    const search = e.getFeature('Keyboard').text
 
-    // search last week xxx limit to main channels and primetime, too (identifiers OR??)
+    // search last week, primetime, over our channels of interest
     const rite = new Date().getTime()
     const left = rite - (7 * 86400 * 1000)
     const l = new Date(left).toISOString().substr(0, 10)
     const r = new Date(rite).toISOString().substr(0, 10)
     console.log(l, ' to ', r)
 
-    TVA.fetchJSON(`https://archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`, (response) => {
+    // stick with just our channels of interest
+    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
+
+    // stick with primetime, 5-11pm
+    const primetime = []
+    for (const n of [...Array(7).keys()]) {
+      primetime.push(`title:"${n+5}pm"`)
+      primetime.push(`title:"${n+5}:30pm"`)
+    }
+
+    const query = `(${search}) AND (${chans}) AND (${primetime.join(' OR ')})`
+    const url = `https://www-tracey.archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`
+    console.log(url)
+
+    TVA.fetchJSON(url, (response) => {
       let vids = ''
       for (const hit of JSON.parse(response)) {
         console.log(hit)
@@ -399,11 +419,11 @@ class TVA {
       <title>Search results for: ${query.replace(/&/g, '&amp;')}</title>
     </banner>
     <collectionList>
-      <shelf>
+      <grid>
         <section>
           ${vids}
         </section>
-      </shelf>
+      </grid>
     </collectionList>
   </stackTemplate>
 </document>`)
@@ -438,27 +458,39 @@ class TVA {
     xhr.send(dataString)
   }
 
+
   /**
-   * convenience function inserts alert template, to present messages/errors to the user.
+   * Convenience function inserts alert template, to present messages/errors to the user.
+   * @param {string} title
+   * @param {string} description
+   * @param {boolean} replacePrior
    */
-  static alert(title, description) {
+  static alert(title, description, replacePrior) {
     TVA.render(`<?xml version="1.0" encoding="UTF-8"?>
   <document>
     <alertTemplate>
       <title>${title}</title>
       <description>${description}</description>
     </alertTemplate>
-  </document>`)
+  </document>`, replacePrior)
+    navigationDocument.popDocument() // clear the 'document' from any 'back' behaviour
   }
 
   /**
    * Renders markup to screen
    * @param {string} ml of TVML to render to screen
+   * @param {boolean} replacePrior
    */
-  static render(ml) {
+  static render(ml, replacePrior) {
     const templateParser = new DOMParser()
     const parsedTemplate = templateParser.parseFromString(ml, 'application/xml')
-    navigationDocument.pushDocument(parsedTemplate)
+    if (0  &&  replacePrior  &&  TVA.priorDoc) {
+      const currentDoc = getActiveDocument()
+      navigationDocument.replaceDocument(parsedTemplate, currentDoc) // TVA.priorDoc) // xxx
+    } else {
+      navigationDocument.pushDocument(parsedTemplate)
+    }
+    TVA.priorDoc = parsedTemplate // xxx
   }
 }
 
