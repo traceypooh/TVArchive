@@ -62,24 +62,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     }
   
     func auth() {
-        let val="xxx"
-        
         if (false) {
             let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())
             HTTPCookieStorage.shared.removeCookies(since: yesterday!)
             return
         }
         
-        self.setIAcookie("logged-in-user", "tracey%40archive.org", "archive.org")
-        self.setIAcookie("logged-in-user", "tracey%40archive.org", "www-tracey.archive.org")
-        
-        self.setIAcookie("logged-in-sig", val, "archive.org")
-        self.setIAcookie("logged-in-sig", val, "www-tracey.archive.org")
+        self.setIAcookie("testcookie", "1", "archive.org")
+        self.setIAcookie("testcookie", "1", "www-tracey.archive.org")
     }
     
     
     func setIAcookie(_ name: String, _ val: String, _ domain: String) {
-        let ExpTime = TimeInterval(60 * 60 * 24 * 365)
+        let ExpTime = TimeInterval(60 * 60 * 24 * 365) // 1 year
         
         let cookieProps: [HTTPCookiePropertyKey : Any] = [
             HTTPCookiePropertyKey.domain: domain,

@@ -77,7 +77,7 @@ class TVA {
   /**
    * Takes search results and creates video carousels
    *
-   * @param response string - JSON reply from search REST API
+   * @param {string} response - JSON reply from search REST API
    */
   static search_results_to_carousels(response) {
     // TVA.alert('PARSE', response)
@@ -136,14 +136,8 @@ class TVA {
     <section>
   `
       // eslint-disable-next-line  guard-for-in
-      for (const show of shows) {
-        const vid = `https://archive.org/download/${show.identifier}/format=h.264${args}`
-        vids += `
-  <lockup onselect="TVA.playVideo('${vid}', '${show.identifier}')">
-    <img src="https://archive.org/services/img/${show.identifier}" width="360" height="248"/>
-    <title>${show.title}</title>
-  </lockup>`
-      }
+      for (const show of shows)
+        vids += TVA.videoTile(show, args)
 
       vids += `
     </section>
@@ -188,9 +182,24 @@ class TVA {
 
 
   /**
+   * Renders a video tile (clickable image and title)
+   * @param {array} map
+   * @param {string} args
+   */
+  static videoTile(map, args) {
+    const vid = `https://www-tracey.archive.org/download/${map.identifier}/format=h.264${args}`
+    return `
+  <lockup onselect="TVA.playVideo('${vid}', '${map.identifier}')">
+    <img src="https://archive.org/services/img/${map.identifier}" width="360" height="248"/>
+    <title>${map.title.replace(/&/g, '&amp;')}</title>
+  </lockup>`
+  }
+
+
+  /**
    * Plays a video
-   * @param videourl string - url for video
-   * @param identifier string - item identifier
+   * @param {string} videourl - url for video
+   * @param {string} identifier - item identifier
    * eslint-disable-next-line  no-unused-vars */
   static playVideo(videourl, identifier) {
     const singleVideo = new MediaItem('video', videourl)
@@ -205,7 +214,7 @@ class TVA {
 
   /**
    * Returns timestamp (unix epoch based) in _milliseconds_ for the identifier
-   * @param id string - item identifier
+   * @param {string} id - item identifier
    */
   static identifierTS(id) {
     const ymd = id.split(/_/)[1]
@@ -217,7 +226,7 @@ class TVA {
 
   /**
    * Returns short name of day for identifier, eg: 'Mon'
-   * @param id string - item identifier
+   * @param {string} id - item identifier
    */
   static identifierDay(id) {
     const ts = TVA.identifierTS(id)
@@ -257,7 +266,7 @@ class TVA {
 
     TVA.render(`
 <document>
-  <formTemplate onselect="TVA.login()">
+  <formTemplate>
     <banner>
       <img src="https://archive.org/images/glogo.png" width="79" height="79"/>
       <description>
@@ -280,16 +289,48 @@ class TVA {
   static login() {
     const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
     const e = doc.getElementsByTagName('textField').item(0)
-    const user = e.getAttribute('data-username')
-    const pass = e.getFeature('Keyboard').text
+    const user = encodeURIComponent(e.getAttribute('data-username'))
+    const pass = encodeURIComponent(e.getFeature('Keyboard').text)
 
-    TVA.alert(user)
-    TVA.alert(pass)
+    const dataString = `username=${user}&password=${pass}&remember=CHECKED&action=login&submit=Log+in`
+
+    TVA.fetchPOST('https://www-tracey.archive.org/account/login.php', dataString, (xhr) => {
+      // https://developer.apple.com/documentation/tvmljs/xmlhttprequest
+      // TVA.alert(dataString.replace(/&/g, '&amp;'))
+      TVA.alert(xhr.status)
+      TVA.alert(xhr.getAllResponseHeaders())
+      // debugger
+      TVA.alert(xhr.responseText.replace(/&/g, '&amp;'))
+    })
   }
 
 
   static favorites() {
-    TVA.alert('xxx')
+    TVA.fetchJSON('https://archive.org/bookmarks.php?output=json', (response) => {
+      let vids = ''
+      for (const fave of JSON.parse(response)) {
+        if (fave.mediatype !== 'movies')
+          continue
+        console.log(fave)
+        vids += TVA.videoTile(fave, '')
+      }
+
+      TVA.render(`
+<document>
+  <stackTemplate>
+    <banner>
+      <title>Your Favorite Videos</title>
+    </banner>
+    <collectionList>
+      <shelf>
+        <section>
+          ${vids}
+        </section>
+      </shelf>
+    </collectionList>
+  </stackTemplate>
+</document>`)
+    })
   }
 
 
@@ -300,26 +341,29 @@ class TVA {
 
   /**
    * Like $.getJSON()
-   * @param url string - REST API url that returns JSON
-   * @param callback function - function to call with results (or error)
+   * @param {string} url  - REST API url that returns JSON
+   * @param {function} callback - function to call with results (or error)
    */
   static fetchJSON(url, callback) {
     const xhr = new XMLHttpRequest()
-    xhr.responseType = 'document'
     xhr.addEventListener('load', () => callback(xhr.responseText), false)
-    // this.alert('FETCHING', url.replace(/&/g, '&amp;'))
+    // TVA.alert('FETCHING', url.replace(/&/g, '&amp;'))
     xhr.open('GET', url, true)
+    xhr.responseType = 'document'
     xhr.send()
   }
 
-  static fetchPOST(url, callback) {
+  static fetchPOST(url, dataString, callback) {
     const xhr = new XMLHttpRequest()
     // Send the proper header information along with the request
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-    xhr.responseType = 'document'
-    xhr.addEventListener('load', () => callback(xhr.responseText), false)
+    xhr.addEventListener('load', () => callback(xhr), false)
     xhr.open('POST', url, true)
-    xhr.send('foo=xxx&lorem=ipsum')
+    xhr.withCredentials = true
+    xhr.responseType = 'document'
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+    // TVA.alert('POSTING', url);
+
+    xhr.send(dataString)
   }
 
   /**
@@ -337,7 +381,7 @@ class TVA {
 
   /**
    * Renders markup to screen
-   * @param ml string of TVML to render to screen
+   * @param {string} ml of TVML to render to screen
    */
   static render(ml) {
     const templateParser = new DOMParser()
