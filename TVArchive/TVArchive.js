@@ -10,7 +10,7 @@ class TVA {
   // https://developer.apple.com/library/archive/documentation/TVMLKitJS/Conceptual/TVMLProgrammingGuide/PlayingVideo.html#//apple_ref/doc/uid/TP40016718-CH13-SW1
   // https://medium.com/airbnb-engineering/apple-tv-authentication-a156937ea211
   // https://stephenradford.me/oauth-login-on-tvos/
-
+  // https://github.com/emadalam/atvjs
 
   /* global App navigationDocument MediaItem Playlist Player */
   /* eslint no-continue: 0 */
@@ -65,7 +65,7 @@ class TVA {
     const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
     const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
       `q=${query}`,
-      'fl[]=identifier,title', //,reported_server,reported_dir
+      'fl[]=identifier,title', // ,reported_server,reported_dir
       'sort[]=identifier+desc',
       'rows=9999',
       'contentLength=1',
@@ -128,9 +128,11 @@ class TVA {
       const shows = map[ch]
       // TVA.alert(network, JSON.stringify(shows))
 
-      // <title>${network}</title>
       vids += `
   <shelf>
+    <header>
+      <title>${network}</title>
+    </header>
     <section>
   `
       // eslint-disable-next-line  guard-for-in
@@ -149,20 +151,39 @@ class TVA {
   `
     }
 
-    const template = `
+    TVA.render(`
   <document>
     <stackTemplate>
       <banner>
         <title>TV News Archive - Last Week</title>
       </banner>
       <collectionList>
+        <shelf>
+          <header>
+            <title>Options</title>
+          </header>
+          <section>
+            <lockup onselect="TVA.search()">
+              <img src="https://archive.org/images/search.png" width="100" height="100"/>
+              <title>Search</title>
+              <description>Search captions from last week</description>
+            </lockup>
+            <lockup onselect="TVA.username()">
+              <img src="https://archive.org/images/person.png" width="100" height="100"/>
+              <title>Login</title>
+              <description>Login with your archive.org account</description>
+            </lockup>
+            <lockup onselect="TVA.favorites()">
+              <img src="https://archive.org/images/star.png" width="100" height="100" padding="25"/>
+              <title>Favorites</title>
+              <description>Once logged in, see your Internet Archive favorite videos</description>
+            </lockup>
+          </section>
+        </shelf>
         ${vids}
       </collectionList>
     </stackTemplate>
-  </document>`
-    const templateParser = new DOMParser()
-    const parsedTemplate = templateParser.parseFromString(template, 'application/xml')
-    navigationDocument.pushDocument(parsedTemplate)
+  </document>`)
   }
 
 
@@ -206,36 +227,122 @@ class TVA {
   }
 
 
+  static username() {
+    TVA.render(`
+<document>
+  <formTemplate>
+    <banner>
+      <img src="https://archive.org/images/glogo.png" width="79" height="79"/>
+      <description>
+        Log in to Internet Archive account to see your Archive favorites
+      </description>
+    </banner>
+    <textField>
+      dianaprince@example.com
+    </textField>
+    <footer>
+      <button onselect="TVA.password()">
+        <text>Submit</text>
+      </button>
+    </footer>
+  </formTemplate>
+</document>`)
+  }
+
+
+  static password() {
+    const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
+    const e = doc.getElementsByTagName('textField').item(0)
+    const val = e.getFeature('Keyboard').text
+
+    TVA.render(`
+<document>
+  <formTemplate onselect="TVA.login()">
+    <banner>
+      <img src="https://archive.org/images/glogo.png" width="79" height="79"/>
+      <description>
+        Hello ${val}, enter your Internet Archive account password
+      </description>
+    </banner>
+    <textField data-username="${val}">
+      password
+    </textField>
+    <footer>
+      <button onselect="TVA.login()">
+        <text>Login</text>
+      </button>
+    </footer>
+  </formTemplate>
+</document>`)
+  }
+
+
+  static login() {
+    const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
+    const e = doc.getElementsByTagName('textField').item(0)
+    const user = e.getAttribute('data-username')
+    const pass = e.getFeature('Keyboard').text
+
+    TVA.alert(user)
+    TVA.alert(pass)
+  }
+
+
+  static favorites() {
+    TVA.alert('xxx')
+  }
+
+
+  static search() {
+    TVA.alert('xxx')
+  }
+
+
   /**
    * Like $.getJSON()
    * @param url string - REST API url that returns JSON
    * @param callback function - function to call with results (or error)
    */
   static fetchJSON(url, callback) {
-    const templateXHR = new XMLHttpRequest()
-    templateXHR.responseType = 'document'
-    templateXHR.addEventListener('load', () => callback(templateXHR.responseText), false)
+    const xhr = new XMLHttpRequest()
+    xhr.responseType = 'document'
+    xhr.addEventListener('load', () => callback(xhr.responseText), false)
     // this.alert('FETCHING', url.replace(/&/g, '&amp;'))
-    templateXHR.open('GET', url, true)
-    templateXHR.send()
+    xhr.open('GET', url, true)
+    xhr.send()
   }
 
+  static fetchPOST(url, callback) {
+    const xhr = new XMLHttpRequest()
+    // Send the proper header information along with the request
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+    xhr.responseType = 'document'
+    xhr.addEventListener('load', () => callback(xhr.responseText), false)
+    xhr.open('POST', url, true)
+    xhr.send('foo=xxx&lorem=ipsum')
+  }
 
   /**
    * convenience function inserts alert template, to present messages/errors to the user.
    */
   static alert(title, description) {
-    const alertString = `<?xml version="1.0" encoding="UTF-8"?>
+    TVA.render(`<?xml version="1.0" encoding="UTF-8"?>
   <document>
     <alertTemplate>
       <title>${title}</title>
       <description>${description}</description>
     </alertTemplate>
-  </document>
-  `
-    const parser = new DOMParser()
-    const alertDoc = parser.parseFromString(alertString, 'application/xml')
-    navigationDocument.pushDocument(alertDoc)
+  </document>`)
+  }
+
+  /**
+   * Renders markup to screen
+   * @param ml string of TVML to render to screen
+   */
+  static render(ml) {
+    const templateParser = new DOMParser()
+    const parsedTemplate = templateParser.parseFromString(ml, 'application/xml')
+    navigationDocument.pushDocument(parsedTemplate)
   }
 }
 
