@@ -164,17 +164,17 @@ class TVA {
           </header>
           <section>
             <lockup onselect="TVA.search()">
-              <img src="https://archive.org/images/search.png" width="100" height="100"/>
+              <img src="resource://search.png" width="100" height="100"/>
               <title>Search</title>
               <description>Search captions from last week</description>
             </lockup>
             <lockup onselect="TVA.username()">
-              <img src="https://archive.org/images/person.png" width="100" height="100"/>
+              <img src="resource://login.png" width="100" height="100"/>
               <title>Login</title>
               <description>Login with your archive.org account</description>
             </lockup>
             <lockup onselect="TVA.favorites()">
-              <img src="https://archive.org/images/star.png" width="100" height="100" padding="25"/>
+              <img src="resource://favorite.png" width="100" height="100" padding="25"/>
               <title>Favorites</title>
               <description>Once logged in, see your Internet Archive favorite videos</description>
             </lockup>
@@ -266,7 +266,7 @@ class TVA {
         Log in to Internet Archive account to see your Archive favorites
       </description>
     </banner>
-    <textField>
+    <textField keyboardType="emailAddress">
       dianaprince@example.com
     </textField>
     <footer>
@@ -293,7 +293,7 @@ class TVA {
         Hello ${val}, enter your Internet Archive account password
       </description>
     </banner>
-    <textField data-username="${val}">
+    <textField data-username="${val}" secure="true" isSecureTextEntry="true">
       password
     </textField>
     <footer>
