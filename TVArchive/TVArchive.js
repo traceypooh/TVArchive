@@ -166,17 +166,17 @@ class TVA {
             <lockup onselect="TVA.search()">
               <img src="resource://search.png" width="100" height="100"/>
               <title>Search</title>
-              <description>Search captions from last week</description>
+              <description>Search week's captions</description>
             </lockup>
             <lockup onselect="TVA.username()">
               <img src="resource://login.png" width="100" height="100"/>
               <title>Login</title>
-              <description>Login with your archive.org account</description>
+              <description>Login to archive.org</description>
             </lockup>
             <lockup onselect="TVA.favorites()">
               <img src="resource://favorite.png" width="100" height="100" padding="25"/>
               <title>Favorites</title>
-              <description>Once logged in, see your Internet Archive favorite videos</description>
+              <description>Archive favorite videos</description>
             </lockup>
           </section>
         </shelf>

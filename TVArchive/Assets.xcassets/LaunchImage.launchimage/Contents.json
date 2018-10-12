@@ -10,6 +10,7 @@
     {
       "orientation" : "landscape",
       "idiom" : "tv",
+      "filename" : "TVArchive-1920x1080.png",
       "extent" : "full-screen",
       "minimum-system-version" : "9.0",
       "scale" : "1x"
