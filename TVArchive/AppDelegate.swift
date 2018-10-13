@@ -33,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     
     // MARK: UIApplicationDelegate
     
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         window = UIWindow(frame: UIScreen.main.bounds)
         
@@ -53,23 +53,52 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
             }
         }
       
-        auth()
+        appControllerContext.launchOptions["loggedin"] = auth()
 
         appController = TVApplicationController(context: appControllerContext, window: window, delegate: self)
-      
       
         return true
     }
   
-    func auth() {
-        if (false) {
-            let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-            HTTPCookieStorage.shared.removeCookies(since: yesterday!)
-            return
+    func auth() -> String {
+        // returns logged in username if logged in; else ""
+        if (false) { // xxx
+            let since = Calendar.current.date(byAdding: .year, value: -2, to: Date())
+            HTTPCookieStorage.shared.removeCookies(since: since!)
+        }
+        
+        var lis = 0
+        var liu = ""
+        for var url in ["https://archive.org/", "https://www-tracey.archive.org/"] {
+            let cooks = HTTPCookieStorage.shared.cookies(for: URL(string: url)!)
+            for var idx in 0..<((cooks?.count)!-1) {
+                print(cooks![idx].name, " =>", cooks![idx].value)
+                if (cooks![idx].name == "logged-in-sig") {
+                    lis += 1
+                } else if (cooks![idx].name == "logged-in-user") {
+                    liu = cooks![idx].value
+                }
+            }
         }
         
         self.setIAcookie("testcookie", "1", "archive.org")
         self.setIAcookie("testcookie", "1", "www-tracey.archive.org")
+
+        lis = 0
+        liu = ""
+        for var url in ["https://archive.org/", "https://www-tracey.archive.org/"] {
+            let cooks = HTTPCookieStorage.shared.cookies(for: URL(string: url)!)
+            for var idx in 0..<((cooks?.count)!-1) {
+                print(cooks![idx].name, " =>", cooks![idx].value)
+                if (cooks![idx].name == "logged-in-sig") {
+                    lis += 1
+                } else if (cooks![idx].name == "logged-in-user") {
+                    liu = cooks![idx].value
+                }
+            }
+        }
+        
+        return (lis == 2 ? liu : "")
     }
     
     
@@ -87,6 +116,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
         
         if let cookie = HTTPCookie(properties: cookieProps) {
             HTTPCookieStorage.shared.setCookie(cookie)
+            print("set ", name, " => ", val, " at ", domain)
         }
     }
     
