@@ -4,7 +4,7 @@
 const log = console.log.bind(console)
 // const log = (() => {})
 
-class $ { }
+class $ { } // <= some tragically missing XHR methods get added below
 
 class TVA {
   // tvOS app 'TVArchive' - leverages TVML/TVJS
@@ -27,6 +27,7 @@ class TVA {
 
 
   static SHOWS() {
+    // The main primetime shows for some of the top networks
     return {
       MSNBCW: {
         '4:00pm': ['Hardball With Chris Matthews'],
@@ -63,13 +64,18 @@ class TVA {
    * Creates TV News shows carousels
    */
   constructor(options) {
-    TVA.alert('Loading', 'News from last week primetime', true)
+    TVA.alert('Loading', 'News from last week primetime', true, null)
     TVA.options = options
 
-    TVA.set_user()
-    TVA.last_week()
+    TVA.set_user(null)
+    TVA.last_week(null)
   }
 
+
+  /**
+   * Sets up search query for last week's primetime shows
+   * @param {string} str - optional message to console.log() at start
+   */
   static last_week(str) {
     if (str)
       log(str)
@@ -91,10 +97,11 @@ class TVA {
     $.getJSON(url, TVA.search_results_to_carousels, null)
   }
 
+
   /**
    * Takes search results and creates video carousels
    *
-   * @param {string} response - JSON reply from search REST API
+   * @param {string} json - JSON reply from search REST API
    */
   static search_results_to_carousels(json) {
     // TVA.alert('PARSE', response)
@@ -137,7 +144,7 @@ class TVA {
     // eslint-disable-next-line  guard-for-in
     for (const ch in TVA.SHOWS()) {
       const network = ch.replace(/W$/, '').replace(/KQED/, 'PBS').replace(/NEWS/, ' News')
-      TVA.alert(network, '', true)
+      TVA.alert(network, '', true, null)
 
       if (typeof map[ch] === 'undefined')
         continue
@@ -211,6 +218,10 @@ class TVA {
   }
 
 
+  /**
+   * Sets .user hashamp with some info if they're logged in
+   * @param {function} callback_in - optional callback to invoke when done
+   */
   static set_user(callback_in) {
     // get some basic user account information
     const XAUTHN = 'https://archive.org/services/xauthn/?op'
@@ -320,6 +331,9 @@ class TVA {
   }
 
 
+  /**
+   * Renders a page asking for Internet Archive account username
+   */
   static username() {
     $.getJSON('https://archive.org/account/login.php', () => {}, (resp) => {
       if (resp.status === 200)
@@ -348,6 +362,9 @@ class TVA {
   }
 
 
+  /**
+   * Renders a page asking for Internet Archive account password
+   */
   static password() {
     const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
     const e = doc.getElementsByTagName('textField').item(0)
@@ -375,6 +392,9 @@ class TVA {
   }
 
 
+  /**
+   * Submits login request to Internt Archive
+   */
   static login() {
     const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
     const e = doc.getElementsByTagName('textField').item(0)
@@ -385,7 +405,7 @@ class TVA {
 
     $.post('https://archive.org/account/login.php', dataString, (xhr) => {
       // https://developer.apple.com/documentation/tvmljs/xmlhttprequest
-      // TVA.alert(dataString.replace(/&/g, '&amp;'))
+      // TVA.alert(TVA.amp(dataString))
       // TVA.alert(xhr.getAllResponseHeaders())
       if (xhr.status !== 200) {
         TVA.user = {}
@@ -403,6 +423,9 @@ class TVA {
   }
 
 
+  /**
+   * Renders a page with user's favorite Internet Archive videos
+   */
   static favorites() {
     $.getJSON(
       'https://archive.org/bookmarks.php?output=json',
@@ -448,6 +471,9 @@ class TVA {
   }
 
 
+  /**
+   * Renders a page for a user to search captions
+   */
   static search() {
     TVA.render(`
 <document>
@@ -471,6 +497,9 @@ class TVA {
   }
 
 
+  /**
+   * Issues user's caption search and shows results
+   */
   static search_results() {
     const doc = navigationDocument.documents[navigationDocument.documents.length - 1]
     const e = doc.getElementsByTagName('textField').item(0)
@@ -506,7 +535,7 @@ class TVA {
           // boost the sample to up to 3 minutes
           .replace(/t=([\d\.]+)\/[\d\.]+/, (x,m) => { return `t=${m}/${180+parseInt(m)}` })
         )
-        vids += TVA.videoTile2(`https:${hit.thumb}`, vid, hit.title.replace(/&/g, '&amp;')) // xxx .snip => description
+        vids += TVA.videoTile2(`https:${hit.thumb}`, vid, TVA.amp(hit.title)) // xxx .snip => description
       }
       log(vids)
       // debugger
@@ -515,7 +544,7 @@ class TVA {
 <document>
   <stackTemplate>
     <banner>
-      <title>Search results for: ${search.replace(/&/g, '&amp;')}</title>
+      <title>Search results for: ${TVA.amp(search)}</title>
     </banner>
     <collectionList>
       <grid>
@@ -594,6 +623,10 @@ class TVA {
   }
 
 
+  /**
+   * Replaces (often 'naked') '&' chars with markup safe '&amp;'
+   * @param {string} str
+   */
   static amp(str) {
     return str.replace(/&/g, '&amp;')
   }
@@ -624,6 +657,7 @@ $.getJSON = (url, callback, error_callback) => {
   xhr.responseType = 'document'
   xhr.send()
 }
+
 
 /**
  * Like $.post()
