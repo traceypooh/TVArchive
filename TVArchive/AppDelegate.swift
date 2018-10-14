@@ -53,73 +53,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
             }
         }
       
-        appControllerContext.launchOptions["loggedin"] = auth()
-
         appController = TVApplicationController(context: appControllerContext, window: window, delegate: self)
       
         return true
     }
-  
-    func auth() -> String {
-        // returns logged in username if logged in; else ""
-        if (false) { // xxx
-            let since = Calendar.current.date(byAdding: .year, value: -2, to: Date())
-            HTTPCookieStorage.shared.removeCookies(since: since!)
-        }
-        
-        var lis = 0
-        var liu = ""
-        for var url in ["https://archive.org/", "https://www-tracey.archive.org/"] {
-            let cooks = HTTPCookieStorage.shared.cookies(for: URL(string: url)!)
-            for var idx in 0..<((cooks?.count)!-1) {
-                print(cooks![idx].name, " =>", cooks![idx].value)
-                if (cooks![idx].name == "logged-in-sig") {
-                    lis += 1
-                } else if (cooks![idx].name == "logged-in-user") {
-                    liu = cooks![idx].value
-                }
-            }
-        }
-        
-        self.setIAcookie("testcookie", "1", "archive.org")
-        self.setIAcookie("testcookie", "1", "www-tracey.archive.org")
-
-        lis = 0
-        liu = ""
-        for var url in ["https://archive.org/", "https://www-tracey.archive.org/"] {
-            let cooks = HTTPCookieStorage.shared.cookies(for: URL(string: url)!)
-            for var idx in 0..<((cooks?.count)!-1) {
-                print(cooks![idx].name, " =>", cooks![idx].value)
-                if (cooks![idx].name == "logged-in-sig") {
-                    lis += 1
-                } else if (cooks![idx].name == "logged-in-user") {
-                    liu = cooks![idx].value
-                }
-            }
-        }
-        
-        return (lis == 2 ? liu : "")
-    }
-    
-    
-    func setIAcookie(_ name: String, _ val: String, _ domain: String) {
-        let ExpTime = TimeInterval(60 * 60 * 24 * 365) // 1 year
-        
-        let cookieProps: [HTTPCookiePropertyKey : Any] = [
-            HTTPCookiePropertyKey.domain: domain,
-            HTTPCookiePropertyKey.path: "/",
-            HTTPCookiePropertyKey.name: name,
-            HTTPCookiePropertyKey.value: val,
-            HTTPCookiePropertyKey.secure: "TRUE",
-            HTTPCookiePropertyKey.expires: NSDate(timeIntervalSinceNow: ExpTime)
-        ]
-        
-        if let cookie = HTTPCookie(properties: cookieProps) {
-            HTTPCookieStorage.shared.setCookie(cookie)
-            print("set ", name, " => ", val, " at ", domain)
-        }
-    }
-    
     
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
