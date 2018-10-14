@@ -1,4 +1,11 @@
 
+// uncomment one:
+// eslint-disable-next-line  no-console
+const log = console.log.bind(console)
+// const log = (() => {})
+
+class $ { }
+
 class TVA {
   // tvOS app 'TVArchive' - leverages TVML/TVJS
   // xxx loading interstitials
@@ -15,7 +22,7 @@ class TVA {
   // https://stephenradford.me/oauth-login-on-tvos/
   // https://github.com/emadalam/atvjs
 
-  /* global App navigationDocument getActiveDocument MediaItem Playlist Player */
+  /* global App navigationDocument getActiveDocument MediaItem Playlist Player $ */
   /* eslint no-continue: 0 */
 
 
@@ -55,9 +62,17 @@ class TVA {
   /**
    * Creates TV News shows carousels
    */
-  constructor() {
+  constructor(options) {
     TVA.alert('Loading', 'News from last week primetime', true)
+    TVA.options = options
 
+    TVA.set_user()
+    TVA.last_week()
+  }
+
+  static last_week(str) {
+    if (str)
+      log(str)
     const rite = new Date().getTime() / 1000
     const left = rite - (7 * 86400)
 
@@ -73,18 +88,17 @@ class TVA {
       'rows=9999',
       'contentLength=1',
       'output=json'].join('&')}`
-    TVA.fetchJSON(url, TVA.search_results_to_carousels)
+    $.getJSON(url, TVA.search_results_to_carousels)
   }
-
 
   /**
    * Takes search results and creates video carousels
    *
    * @param {string} response - JSON reply from search REST API
    */
-  static search_results_to_carousels(response) {
+  static search_results_to_carousels(json) {
     // TVA.alert('PARSE', response)
-    const { docs } = JSON.parse(response).response
+    const { docs } = json.response
 
     const SHOWS = TVA.SHOWS()
     const map = {}
@@ -117,8 +131,8 @@ class TVA {
     // TVA.alert('map', JSON.stringify(map))
 
     let vids = ''
-    // const startend = '&amp;start=0&amp;end=180' // xxx
-    const args = '&amp;tunnel=1'
+
+    const args = (TVA.user.editor ? '&amp;tunnel=1' : '&amp;start=0&amp;end=180')
 
     // eslint-disable-next-line  guard-for-in
     for (const ch in TVA.SHOWS()) {
@@ -151,6 +165,11 @@ class TVA {
     if (TVA.priorDoc)
       navigationDocument.popToDocument(TVA.priorDoc)
 
+    const login = (typeof TVA.user.screenname === 'undefined' ?
+      'Login to archive.org' :
+      `Hello ${TVA.user.screenname}`
+    )
+
     TVA.render(`
   <document>
     <stackTemplate>
@@ -171,7 +190,7 @@ class TVA {
             <lockup onselect="TVA.username()">
               <img src="resource://login.png" width="100" height="100"/>
               <title>Login</title>
-              <description>Login to archive.org</description>
+              <description>${login}</description>
             </lockup>
             <lockup onselect="TVA.favorites()">
               <img src="resource://favorite.png" width="100" height="100" padding="25"/>
@@ -187,32 +206,75 @@ class TVA {
   }
 
 
-  /**
-   * Renders a video tile (clickable image and title)
-   * @param {array} map
-   * @param {string} args
-   */
-  static videoTile(map, args) {
-    const vid = `https://archive.org/download/${map.identifier}/format=h.264${args}`
-    return `
-  <lockup onselect="TVA.playVideo('${vid}', '${map.identifier}')">
-    <img src="https://archive.org/services/img/${map.identifier}" width="360" height="248"/>
-    <title>${map.title.replace(/&/g, '&amp;')}</title>
-  </lockup>`
-  }
+  static set_user(callback) {
+    // get some basic user account information
+    const XAUTHN = 'https://archive.org/services/xauthn/?op'
+    const EDITOR = 'tvarchive'
 
-  /**
-   *
-   * @param {string} vid url
-   * @param {string} thumb url
-   * @param {string} title
-   */
-  static videoTile2(thumb, vid, title) {
-    return `
-  <lockup onselect="TVA.playVideo('${vid}', '${title}')">
-    <img src="${thumb}" width="360" height="248"/>
-    <title>${title}</title>
-  </lockup>`
+    TVA.user = {}
+
+    if (!callback)
+      callback = log
+
+    const chk = (xhr) => {
+      if (xhr.status !== 200)
+        return callback('bad response')
+      try {
+        const r = JSON.parse(xhr.responseText)
+        if (
+          r.success  &&  r.values.passed  &&  r.values.passed.length  &&
+          r.values.passed.includes(EDITOR)
+        ) {
+          TVA.user.editor = true
+          return callback('editor')
+        }
+      } catch (e) {
+        return callback('chk() json parse fail')
+      }
+      return callback('basic')
+    }
+
+    const get_account_info = (xhr) => {
+      if (xhr.status !== 200)
+        return callback('bad response')
+      log('checked user')
+      try {
+        const ret = JSON.parse(xhr.responseText)
+        if (ret.success  &&  ret.values.verified  &&  !ret.values.locked) {
+          log('user admin')
+          TVA.user = ret.values
+
+          // now see if they have editorial abilities
+          TVA.fetchPOST(`${XAUTHN}=chkprivs`, `itemname=${TVA.user.itemname}&privs=${EDITOR}`, chk)
+          return false
+        }
+      } catch (e) {
+        return callback('get_account_info() json parse fail')
+      }
+      return callback('user account issue')
+    }
+
+    const get_screenname = (json) => {
+      TVA.user.screenname = (json  &&  json.length ? json[0].userid : '')
+      if (TVA.user.screenname !== '') {
+        // now get more user account info
+        log('logged in', TVA.user.screenname)
+        TVA.fetchPOST(`${XAUTHN}=info`, `itemname=${TVA.user.screenname}`, get_account_info)
+      } else {
+        callback('not logged in')
+      }
+    }
+
+    // kinda cheesy, but this will both tell us if the user is logged into archive.org and
+    // we can find their screenname so long as they have 1+ favorite already
+    $.getJSON(
+      'https://archive.org/bookmarks.php?output=json',
+      get_screenname,
+      () => {
+        callback('doesnt seem to be logged in')
+      }
+    )
+    return true
   }
 
 
@@ -257,6 +319,11 @@ class TVA {
 
 
   static username() {
+    $.getJSON('https://archive.org/account/login.php', () => {}, (resp) => {
+      if (resp.status === 200)
+        log('testcookie _should_ be set now..')
+    })
+
     TVA.render(`
 <document>
   <formTemplate>
@@ -317,25 +384,43 @@ class TVA {
     TVA.fetchPOST('https://archive.org/account/login.php', dataString, (xhr) => {
       // https://developer.apple.com/documentation/tvmljs/xmlhttprequest
       // TVA.alert(dataString.replace(/&/g, '&amp;'))
-      TVA.alert(xhr.status)
-      TVA.alert(xhr.getAllResponseHeaders())
+      // TVA.alert(xhr.getAllResponseHeaders())
+      if (xhr.status !== 200) {
+        TVA.user = {}
+        return TVA.alert(`server responded with non-success status: ${xhr.status}`)
+      }
+
+      // if (xhr.responseText.indexOf('Your browser does not appear to support cookies'))
+      // return TVA.alert('testcookie set/send problem')
+
       // debugger
-      TVA.alert(xhr.responseText.replace(/&/g, '&amp;'))
+      // return TVA.alert(TVA.amp(xhr.responseText).replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+      TVA.set_user(TVA.last_week)
     })
   }
 
 
   static favorites() {
-    TVA.fetchJSON('https://archive.org/bookmarks.php?output=json', (response) => {
-      let vids = ''
-      for (const fave of JSON.parse(response)) {
-        if (fave.mediatype !== 'movies')
-          continue
-        console.log(fave)
-        vids += TVA.videoTile(fave, '')
-      }
+    $.getJSON(
+      'https://archive.org/bookmarks.php?output=json',
+      (faves) => {
+        let vids = ''
 
-      TVA.render(`
+        if (!faves.length) {
+          TVA.alert(
+            'Make some Favorites!',
+            'Open a browser with https://archive.org, login, and start making some favorite and they will then show up here',
+          )
+        }
+
+        for (const fave of faves) {
+          if (fave.mediatype !== 'movies')
+            continue
+          log(fave)
+          vids += TVA.videoTile(fave, '')
+        }
+
+        TVA.render(`
 <document>
   <stackTemplate>
     <banner>
@@ -350,7 +435,11 @@ class TVA {
     </collectionList>
   </stackTemplate>
 </document>`)
-    })
+      },
+      () => {
+        TVA.alert('You likely need to login first', undefined, undefined, true)
+      },
+    )
   }
 
 
@@ -387,7 +476,7 @@ class TVA {
     const left = rite - (7 * 86400 * 1000)
     const l = new Date(left).toISOString().substr(0, 10)
     const r = new Date(rite).toISOString().substr(0, 10)
-    console.log(l, ' to ', r)
+    log(l, ' to ', r)
 
     // stick with just our channels of interest
     const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
@@ -395,21 +484,21 @@ class TVA {
     // stick with primetime, 5-11pm
     const primetime = []
     for (const n of [...Array(7).keys()]) {
-      primetime.push(`title:"${n+5}pm"`)
-      primetime.push(`title:"${n+5}:30pm"`)
+      primetime.push(`title:"${n + 5}pm"`)
+      primetime.push(`title:"${n + 5}:30pm"`)
     }
 
     const query = `(${search}) AND (${chans}) AND (${primetime.join(' OR ')})`
     const url = `https://www-tracey.archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`
-    console.log(url)
+    log(url)
 
-    TVA.fetchJSON(url, (response) => {
+    $.getJSON(url, (response) => {
       let vids = ''
-      for (const hit of JSON.parse(response)) {
-        console.log(hit)
+      for (const hit of response) {
+        log(hit)
         vids += TVA.videoTile2(`https:${hit.thumb}`, hit.video.replace(/&ignore=x.mp4/, ''), hit.title.replace(/&/g, '&amp;')) // xxx .snip => description
       }
-      console.log(vids)
+      log(vids)
       // debugger
 
       TVA.render(`
@@ -431,20 +520,6 @@ class TVA {
   }
 
 
-  /**
-   * Like $.getJSON()
-   * @param {string} url  - REST API url that returns JSON
-   * @param {function} callback - function to call with results (or error)
-   */
-  static fetchJSON(url, callback) {
-    const xhr = new XMLHttpRequest()
-    xhr.addEventListener('load', () => callback(xhr.responseText), false)
-    // TVA.alert('FETCHING', url.replace(/&/g, '&amp;'))
-    xhr.open('GET', url, true)
-    xhr.responseType = 'document'
-    xhr.send()
-  }
-
   static fetchPOST(url, dataString, callback) {
     const xhr = new XMLHttpRequest()
     // Send the proper header information along with the request
@@ -465,15 +540,16 @@ class TVA {
    * @param {string} description
    * @param {boolean} replacePrior
    */
-  static alert(title, description, replacePrior) {
+  static alert(title, description, replacePrior, noPop) {
     TVA.render(`<?xml version="1.0" encoding="UTF-8"?>
   <document>
     <alertTemplate>
       <title>${title}</title>
-      <description>${description}</description>
+      <description>${typeof description === 'undefined' ? '' : description}</description>
     </alertTemplate>
   </document>`, replacePrior)
-    navigationDocument.popDocument() // clear the 'document' from any 'back' behaviour
+    if (!noPop)
+      navigationDocument.popDocument() // clear the 'document' from any 'back' behaviour
   }
 
   /**
@@ -492,8 +568,67 @@ class TVA {
     }
     TVA.priorDoc = parsedTemplate // xxx
   }
+
+  /**
+   * Renders a video tile (clickable image and title)
+   * @param {array} map
+   * @param {string} args
+   */
+  static videoTile(map, args) {
+    const vid = `https://archive.org/download/${map.identifier}/format=h.264${args}`
+    return `
+  <lockup onselect="TVA.playVideo('${vid}', '${map.identifier}')">
+    <img src="https://archive.org/services/img/${map.identifier}" width="360" height="248"/>
+    <title>${TVA.amp(map.title)}</title>
+  </lockup>`
+  }
+
+  /**
+   *
+   * @param {string} vid url
+   * @param {string} thumb url
+   * @param {string} title
+   */
+  static videoTile2(thumb, vid, title) {
+    return `
+  <lockup onselect="TVA.playVideo('${vid}', '${title}')">
+    <img src="${thumb}" width="360" height="248"/>
+    <title>${title}</title>
+  </lockup>`
+  }
+
+
+  static amp(str) {
+    return str.replace(/&/g, '&amp;')
+  }
+}
+
+
+/**
+ * Like $.getJSON()
+ * @param {string} url  - REST API url that returns JSON
+ * @param {function} callback - function to call with results
+ * @param {function} error_callback - optional function to call with error response
+ */
+$.getJSON = (url, callback, error_callback) => {
+  const xhr = new XMLHttpRequest()
+  xhr.addEventListener('load', (response) => {
+    try {
+      // debugger
+      const json = JSON.parse(response.target.responseText)
+      callback(json)
+    } catch (e) {
+      log(`getJSON(${url}) failed to parse JSON`)
+      if (error_callback)
+        error_callback(response)
+    }
+  }, false)
+  log('FETCHING', url)
+  xhr.open('GET', url, true)
+  xhr.responseType = 'document'
+  xhr.send()
 }
 
 
 // entry point from swift app
-App.onLaunch = () => new TVA()
+App.onLaunch = options => new TVA(options)
