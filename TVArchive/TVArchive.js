@@ -505,7 +505,7 @@ class TVA {
 <document>
   <stackTemplate>
     <banner>
-      <title>Search results for: ${query.replace(/&/g, '&amp;')}</title>
+      <title>Search results for: ${search.replace(/&/g, '&amp;')}</title>
     </banner>
     <collectionList>
       <grid>
