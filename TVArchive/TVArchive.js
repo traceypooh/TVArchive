@@ -88,7 +88,7 @@ class TVA {
       'rows=9999',
       'contentLength=1',
       'output=json'].join('&')}`
-    $.getJSON(url, TVA.search_results_to_carousels)
+    $.getJSON(url, TVA.search_results_to_carousels, null)
   }
 
   /**
@@ -207,7 +207,7 @@ class TVA {
         ${vids}
       </collectionList>
     </stackTemplate>
-  </document>`)
+  </document>`, null)
   }
 
 
@@ -344,7 +344,7 @@ class TVA {
       </button>
     </footer>
   </formTemplate>
-</document>`)
+</document>`, null)
   }
 
 
@@ -371,7 +371,7 @@ class TVA {
       </button>
     </footer>
   </formTemplate>
-</document>`)
+</document>`, null)
   }
 
 
@@ -413,6 +413,8 @@ class TVA {
           TVA.alert(
             'Make some Favorites!',
             'Open a browser with https://archive.org, login, and start making some favorite and they will then show up here',
+            null,
+            null,
           )
         }
 
@@ -437,7 +439,7 @@ class TVA {
       </grid>
     </collectionList>
   </stackTemplate>
-</document>`)
+</document>`, null)
       },
       () => {
         TVA.alert('You likely need to login first', undefined, undefined, true)
@@ -465,7 +467,7 @@ class TVA {
       </button>
     </footer>
   </formTemplate>
-</document>`)
+</document>`, null)
   }
 
 
@@ -492,14 +494,19 @@ class TVA {
     }
 
     const query = `(${search}) AND (${chans}) AND (${primetime.join(' OR ')})`
-    const url = `https://www-tracey.archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`
+    const url = `https://archive.org/tv?output=json&and%5B%5D=publicdate:%5B${l}+TO+${r}%5D&q=${encodeURIComponent(query)}`
     log(url)
 
     $.getJSON(url, (response) => {
       let vids = ''
       for (const hit of response) {
         log(hit)
-        vids += TVA.videoTile2(`https:${hit.thumb}`, hit.video.replace(/&ignore=x.mp4/, ''), hit.title.replace(/&/g, '&amp;')) // xxx .snip => description
+        const vid = (hit.video
+          .replace(/&ignore=x.mp4/, '')
+          // boost the sample to up to 3 minutes
+          .replace(/t=([\d\.]+)\/[\d\.]+/, (x,m) => { return `t=${m}/${180+parseInt(m)}` })
+        )
+        vids += TVA.videoTile2(`https:${hit.thumb}`, vid, hit.title.replace(/&/g, '&amp;')) // xxx .snip => description
       }
       log(vids)
       // debugger
@@ -518,8 +525,8 @@ class TVA {
       </grid>
     </collectionList>
   </stackTemplate>
-</document>`)
-    })
+</document>`, null)
+    }, null)
   }
 
 
