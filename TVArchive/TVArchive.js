@@ -249,7 +249,7 @@ class TVA {
           TVA.user = ret.values
 
           // now see if they have editorial abilities
-          TVA.fetchPOST(`${XAUTHN}=chkprivs`, `itemname=${TVA.user.itemname}&privs=${EDITOR}`, chk)
+          $.post(`${XAUTHN}=chkprivs`, `itemname=${TVA.user.itemname}&privs=${EDITOR}`, chk)
           return false
         }
       } catch (e) {
@@ -263,7 +263,7 @@ class TVA {
       if (TVA.user.screenname !== '') {
         // now get more user account info
         log('logged in', TVA.user.screenname)
-        TVA.fetchPOST(`${XAUTHN}=info`, `itemname=${TVA.user.screenname}`, get_account_info)
+        $.post(`${XAUTHN}=info`, `itemname=${TVA.user.screenname}`, get_account_info)
       } else {
         callback('not logged in')
       }
@@ -383,7 +383,7 @@ class TVA {
 
     const dataString = `username=${user}&password=${pass}&remember=CHECKED&action=login&submit=Log+in`
 
-    TVA.fetchPOST('https://archive.org/account/login.php', dataString, (xhr) => {
+    $.post('https://archive.org/account/login.php', dataString, (xhr) => {
       // https://developer.apple.com/documentation/tvmljs/xmlhttprequest
       // TVA.alert(dataString.replace(/&/g, '&amp;'))
       // TVA.alert(xhr.getAllResponseHeaders())
@@ -523,20 +523,6 @@ class TVA {
   }
 
 
-  static fetchPOST(url, dataString, callback) {
-    const xhr = new XMLHttpRequest()
-    // Send the proper header information along with the request
-    xhr.addEventListener('load', () => callback(xhr), false)
-    xhr.open('POST', url, true)
-    xhr.withCredentials = true
-    xhr.responseType = 'document'
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-    // TVA.alert('POSTING', url);
-
-    xhr.send(dataString)
-  }
-
-
   /**
    * Convenience function inserts alert template, to present messages/errors to the user.
    * @param {string} title
@@ -609,7 +595,7 @@ class TVA {
 
 /**
  * Like $.getJSON()
- * @param {string} url  - REST API url that returns JSON
+ * @param {string} url - REST API url that returns JSON
  * @param {function} callback - function to call with results
  * @param {function} error_callback - optional function to call with error response
  */
@@ -630,6 +616,25 @@ $.getJSON = (url, callback, error_callback) => {
   xhr.open('GET', url, true)
   xhr.responseType = 'document'
   xhr.send()
+}
+
+/**
+ * Like $.post()
+ * @param {string} url - REST API url that returns JSON
+ * @param {string} data - string to send on POST body
+ * @param {function} callback - function to call with results
+ */
+$.post = (url, data, callback) => {
+  const xhr = new XMLHttpRequest()
+  // Send the proper header information along with the request
+  xhr.addEventListener('load', () => callback(xhr), false)
+  xhr.open('POST', url, true)
+  xhr.withCredentials = true
+  xhr.responseType = 'document'
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+  log('POSTING', url)
+
+  xhr.send(data)
 }
 
 
