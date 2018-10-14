@@ -170,6 +170,11 @@ class TVA {
       `Hello ${TVA.user.screenname}`
     )
 
+    const img = (typeof TVA.user.itemname === 'undefined' ?
+      'resource://login.png' :
+      `https://archive.org/services/img/${TVA.user.itemname}`
+    )
+
     TVA.render(`
   <document>
     <stackTemplate>
@@ -188,7 +193,7 @@ class TVA {
               <description>Search week's captions</description>
             </lockup>
             <lockup onselect="TVA.username()">
-              <img src="resource://login.png" width="100" height="100"/>
+              <img src="${img}" width="100" height="100"/>
               <title>Login</title>
               <description>${login}</description>
             </lockup>
@@ -206,15 +211,14 @@ class TVA {
   }
 
 
-  static set_user(callback) {
+  static set_user(callback_in) {
     // get some basic user account information
     const XAUTHN = 'https://archive.org/services/xauthn/?op'
     const EDITOR = 'tvarchive'
 
     TVA.user = {}
 
-    if (!callback)
-      callback = log
+    const callback = callback_in || log
 
     const chk = (xhr) => {
       if (xhr.status !== 200)
@@ -270,9 +274,7 @@ class TVA {
     $.getJSON(
       'https://archive.org/bookmarks.php?output=json',
       get_screenname,
-      () => {
-        callback('doesnt seem to be logged in')
-      }
+      () => callback('doesnt seem to be logged in'),
     )
     return true
   }
@@ -387,7 +389,8 @@ class TVA {
       // TVA.alert(xhr.getAllResponseHeaders())
       if (xhr.status !== 200) {
         TVA.user = {}
-        return TVA.alert(`server responded with non-success status: ${xhr.status}`)
+        TVA.alert(`server responded with non-success status: ${xhr.status}`)
+        return
       }
 
       // if (xhr.responseText.indexOf('Your browser does not appear to support cookies'))
