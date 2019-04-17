@@ -533,7 +533,7 @@ class TVA {
         const vid = (hit.video
           .replace(/&ignore=x.mp4/, '')
           // boost the sample to up to 3 minutes
-          .replace(/t=([\d\.]+)\/[\d\.]+/, (x,m) => { return `t=${m}/${180+parseInt(m)}` })
+          .replace(/t=([\d.]+)\/[\d.]+/, (x, m) => `t=${m}/${180 + parseInt(m, 10)}`)
         )
         vids += TVA.videoTile2(`https:${hit.thumb}`, vid, TVA.amp(hit.title)) // xxx .snip => description
       }
