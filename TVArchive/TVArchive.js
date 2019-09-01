@@ -1,3 +1,5 @@
+/* eslint-disable semi */
+/* eslint-disable max-classes-per-file */
 
 // uncomment one:
 // eslint-disable-next-line  no-console
@@ -22,7 +24,7 @@ class TVA {
   // https://stephenradford.me/oauth-login-on-tvos/
   // https://github.com/emadalam/atvjs
 
-  /* global App navigationDocument getActiveDocument MediaItem Playlist Player $ */
+  /* global App navigationDocument getActiveDocument MediaItem Playlist Player */
   /* eslint no-continue: 0 */
 
 
@@ -680,4 +682,4 @@ $.post = (url, data, callback) => {
 
 
 // entry point from swift app
-App.onLaunch = options => new TVA(options)
+App.onLaunch = (options) => new TVA(options)
