@@ -40,8 +40,8 @@ class TVA {
       },
       CNNW: {
         '5:00pm': ['Anderson Cooper 360'],
-        '6:00pm': ['Cuomo Primetime'],
-        '7:00pm': ['Cuomo Primetime', 'CNN Tonight With Don Lemon'],
+        '6:00pm': ['Cuomo Prime Time', 'Cuomo Primetime'],
+        '7:00pm': ['Cuomo Prime Time', 'Cuomo Primetime', 'CNN Tonight With Don Lemon'],
         '8:00pm': ['CNN Tonight With Don Lemon', 'Anderson Cooper 360'],
         '9:00pm': ['Anderson Cooper 360'],
       },
@@ -188,7 +188,7 @@ class TVA {
   <document>
     <stackTemplate>
       <banner>
-        <title>TV News Archive - Last Week</title>
+        <title>Internet Archive TV News - Last Week</title>
       </banner>
       <collectionList>
         <shelf>
