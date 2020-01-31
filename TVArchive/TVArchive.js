@@ -88,15 +88,17 @@ class TVA {
     const r = new Date(rite * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
 
     const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
-    const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:JSON AND format:h.264`.replace(/ /g, '+')
-    const url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
+    const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:SubRip AND format:h.264`.replace(/ /g, '+')
+
+    TVA.search_url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
       `q=${query}`,
       'fl[]=identifier,title', // ,reported_server,reported_dir
       'sort[]=identifier+desc',
       'rows=9999',
+      'scope=all',
       'contentLength=1',
       'output=json'].join('&')}`
-    $.getJSON(url, TVA.search_results_to_carousels, null)
+    $.getJSON(TVA.search_url, TVA.search_results_to_carousels)
   }
 
 
@@ -106,7 +108,17 @@ class TVA {
    * @param {string} json - JSON reply from search REST API
    */
   static search_results_to_carousels(json) {
-    // TVA.alert('PARSE', response)
+    if (!json.response) {
+      // retry for less results
+      const url = TVA.search_url
+      TVA.search_url = TVA.search_url.replace(/&scope=all/, '')
+      if (url !== TVA.search_url)
+        $.getJSON(TVA.search_url, TVA.search_results_to_carousels)
+
+      return
+    }
+
+
     const { docs } = json.response
 
     const SHOWS = TVA.SHOWS()
