@@ -28,36 +28,60 @@ class TVA {
   /* eslint no-continue: 0 */
 
 
-  static SHOWS() {
-    // The main primetime shows for some of the top networks
+  /**
+   * returns (lowercased) whitelist of patterns in titles to look for
+   */
+  static show_patterns() {
+    return [
+      /anderson cooper/,
+      /brian williams/,
+      /chris hayes/,
+      /chris matthews/,
+      /convention/,
+      /cuomo/,
+      /debate/,
+      /don lemon/,
+      /hannity/,
+      /ingraham/,
+      /lawrence o'donnell/,
+      /news/,
+      /rachel maddow/,
+      /tucker carlson/,
+    ]
+  }
+
+  /**
+   * returns channels and times of the main primetime for some of the top news networks
+   */
+  static channel_times() {
     return {
-      MSNBCW: {
-        '4:00pm': ['Hardball With Chris Matthews'],
-        '5:00pm': ['All In With Chris Hayes'],
-        '6:00pm': ['The Rachel Maddow Show'],
-        '7:00pm': ["The Last Word With Lawrence O'Donnell"],
-        '8:00pm': ['The 11th Hour With Brian Williams'],
-      },
-      CNNW: {
-        '5:00pm': ['Anderson Cooper 360'],
-        '6:00pm': ['Cuomo Prime Time', 'Cuomo Primetime'],
-        '7:00pm': ['Cuomo Prime Time', 'Cuomo Primetime', 'CNN Tonight With Don Lemon'],
-        '8:00pm': ['CNN Tonight With Don Lemon', 'Anderson Cooper 360'],
-        '9:00pm': ['Anderson Cooper 360'],
-      },
-      FOXNEWSW: {
-        '6:00pm': ['Hannity'],
-        '7:00pm': ['The Ingraham Angle'],
-        '8:00pm': ['Fox News @ Night With Shannon Bream'],
-        '9:00pm': ['Tucker Carlson Tonight'],
-      },
-      KQED: {
-        '6:00pm': ['PBS NewsHour'],
-      },
-      BBCNEWS: {
-        '5:00pm': ['BBC News at Five'],
-        '6:00pm': ['BBC News at Six'],
-      },
+      MSNBCW: [
+        '4:00pm',
+        '5:00pm',
+        '6:00pm',
+        '7:00pm',
+        '8:00pm',
+      ],
+      CNNW: [
+        '5:00pm',
+        '6:00pm',
+        '7:00pm',
+        '8:00pm',
+        '9:00pm',
+      ],
+      FOXNEWSW: [
+        '6:00pm',
+        '7:00pm',
+        '8:00pm',
+        '9:00pm',
+      ],
+      KQED: [
+        '6:00pm',
+      ],
+      BBCNEWS: [
+        '5:00pm',
+        '6:00pm',
+      ],
     }
   }
 
@@ -87,16 +111,15 @@ class TVA {
     const l = new Date(left * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
     const r = new Date(rite * 1000).toISOString().replace(/\.\d\d\dZ/, '').replace(/[^\d]/g, '')
 
-    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
+    const chans = `contributor:${Object.keys(TVA.channel_times()).join(' OR contributor:')}`
     const query = `(${chans}) AND scandate:%5B${l} TO ${r}%5D AND format:SubRip AND format:h.264`.replace(/ /g, '+')
 
-    TVA.search_url = `https://www-tracey.archive.org/advancedsearch.php?${[ // xxx www-tracey
+    TVA.search_url = `https://archive.org/advancedsearch.php?${[
       `q=${query}`,
       'fl[]=identifier,title', // ,reported_server,reported_dir
       'sort[]=identifier+desc',
       'rows=9999',
       'scope=all',
-      'contentLength=1',
       'output=json'].join('&')}`
     $.getJSON(TVA.search_url, TVA.search_results_to_carousels)
   }
@@ -121,30 +144,40 @@ class TVA {
 
     const { docs } = json.response
 
-    const SHOWS = TVA.SHOWS()
+    const channel_times = TVA.channel_times()
+    const patterns = TVA.show_patterns()
     const map = {}
     for (const show of docs) {
       // eslint-disable-next-line  guard-for-in
-      for (const ch in SHOWS) {
+      for (const ch in channel_times) {
         if (!show.identifier.startsWith(ch))
           continue // show isnt for this channel
 
         // eslint-disable-next-line  guard-for-in
-        for (const start in SHOWS[ch]) {
+        for (const start of channel_times[ch]) {
           const mat = ` ${start}-`
           if (show.title.indexOf(mat) < 0)
             continue // show isnt in our primetime whitelist - wrong start time
 
-          for (const title of SHOWS[ch][start]) {
-            // TVA.alert(`${show.title} -v- ${title}`, mat)
-            if (!show.title.startsWith(title))
-              continue // show isnt in our primetime whitelist - wrong title
-
-            // create array if !exist yet and push element into it
-            (map[ch] = map[ch] || []).push({
-              identifier: show.identifier,
-              title: `${TVA.identifierDay(show.identifier)} ${start.replace(/:\d\d/, '')} ${title}`,
-            })
+          // eslint-disable-next-line  guard-for-in
+          for (const pattern of patterns) {
+            if (show.title.toLowerCase().match(pattern)) {
+              // log(show.title, 'v', pattern)
+              const parts = show.title.split(/:/)
+              const title = (parts.length > 4
+                // expected case - go from/to:
+                //  Cities Tour : CSPAN : February 21, 2020 6:50pm-8:03pm EST
+                //  Cities Tour
+                ? parts.reverse().splice(4).reverse().join(':')
+                : show.title
+              );
+              // create array if !exist yet and push element into it
+              (map[ch] = map[ch] || []).push({
+                identifier: show.identifier,
+                title: `${TVA.identifierDay(show.identifier)} ${start.replace(/:\d\d/, '')} ${title.trim()}`,
+              })
+              break
+            }
           }
         }
       }
@@ -156,7 +189,7 @@ class TVA {
     const args = (TVA.user.editor ? '&amp;tunnel=1' : '&amp;start=0&amp;end=180')
 
     // eslint-disable-next-line  guard-for-in
-    for (const ch in TVA.SHOWS()) {
+    for (const ch in TVA.channel_times()) {
       const network = ch.replace(/W$/, '').replace(/KQED/, 'PBS').replace(/NEWS/, ' News')
       TVA.alert(network, '', true, null)
 
@@ -527,7 +560,7 @@ class TVA {
     log(l, ' to ', r)
 
     // stick with just our channels of interest
-    const chans = `contributor:${Object.keys(TVA.SHOWS()).join(' OR contributor:')}`
+    const chans = `contributor:${Object.keys(TVA.channel_times()).join(' OR contributor:')}`
 
     // stick with primetime, 5-11pm
     const primetime = []
